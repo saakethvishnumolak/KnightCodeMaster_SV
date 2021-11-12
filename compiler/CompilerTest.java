@@ -28,7 +28,7 @@ public class CompilerTest{
             tokens = new CommonTokenStream(lexer); //create the token stream
             parser = new KnightCodeParser(tokens); //create the parser
        
-            ParseTree tree = parser.program();  //set the start location of the parser
+            ParseTree tree = parser.file();  //set the start location of the parser
              
             
             //Trees.inspect(tree, parser);
