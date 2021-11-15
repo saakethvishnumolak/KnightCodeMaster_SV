@@ -5,6 +5,7 @@ package compiler;
 
 import java.io.IOException;
 
+
 //ANTLR packages
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.CharStream;
@@ -33,9 +34,12 @@ public class kcc{
        
             ParseTree tree = parser.file();  //set the start location of the parser
             
-            String classfile = args[0];
+            String classfile = args[1];
             
             myListener listener = new myListener(classfile);
+            ParseTreeWalker walker = new ParseTreeWalker();
+            walker.walk(listener, tree);
+            
         }
         catch(IOException e){
             System.out.println(e.getMessage());
