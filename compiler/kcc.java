@@ -1,9 +1,10 @@
-package knightcodecompiler;
+package compiler;
 /**
  * This class encapsulates a basic grammar test.
  */
 
 import java.io.IOException;
+
 //ANTLR packages
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.CharStream;
@@ -13,7 +14,7 @@ import org.antlr.v4.gui.Trees;
 
 import lexparse.*;
 
-public class CompilerTest{
+public class kcc{
 
 
     public static void main(String[] args){
@@ -21,6 +22,8 @@ public class CompilerTest{
         KnightCodeLexer lexer;
         CommonTokenStream tokens;
         KnightCodeParser parser;
+        
+        System.out.println("Starting the compiler...");
 
         try{
             input = CharStreams.fromFileName(args[0]);  //get the input
@@ -29,15 +32,10 @@ public class CompilerTest{
             parser = new KnightCodeParser(tokens); //create the parser
        
             ParseTree tree = parser.file();  //set the start location of the parser
-             
             
-            //Trees.inspect(tree, parser);
+            String classfile = args[0];
             
-            //System.out.println(tree.toStringTree(parser));
-            
-            myVisitor visitor = new myVisitor();
-            visitor.visit(tree)
-        
+            myListener listener = new myListener(classfile);
         }
         catch(IOException e){
             System.out.println(e.getMessage());
