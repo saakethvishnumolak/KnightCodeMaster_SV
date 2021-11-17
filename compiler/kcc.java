@@ -31,7 +31,7 @@ public class kcc{
             lexer = new KnightCodeLexer(input); //create the lexer
             tokens = new CommonTokenStream(lexer); //create the token stream
             parser = new KnightCodeParser(tokens); //create the parser
-       
+            
             ParseTree tree = parser.file();  //set the start location of the parser
             
             String classfile = args[1];
@@ -39,6 +39,8 @@ public class kcc{
             myListener listener = new myListener(classfile);
             ParseTreeWalker walker = new ParseTreeWalker();
             walker.walk(listener, tree);
+            
+            
             
         }
         catch(IOException e){

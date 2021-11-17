@@ -2,6 +2,7 @@ package compiler;
 
 import lexparse.*;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -63,214 +64,59 @@ public class myListener extends KnightCodeBaseListener{
 	@Override public void exitFile(KnightCodeParser.FileContext ctx) { 
 		System.out.println("ExitFile");
 		printContext(ctx.getText());
-		for(Map.Entry me : variables.entrySet()) {
-			System.out.println("Key: " + me.getKey() + " Value: " + me.getValue());
-		}
 		
 		closeClass();
 	}
 	
-	@Override public void enterDeclare(KnightCodeParser.DeclareContext ctx) { 
-		System.out.println("enterDeclare");
-	}
-	
-	@Override public void exitDeclare(KnightCodeParser.DeclareContext ctx) {
-		System.out.println("exitDeclare");
-		printContext(ctx.getText());
-	}
-	
-	@Override public void enterVariable(KnightCodeParser.VariableContext ctx) {
-		System.out.println("EnterVariable");
-	}
-	
-	@Override public void exitVariable(KnightCodeParser.VariableContext ctx) {
-		System.out.println("ExitVariable");
-		printContext(ctx.getText());
-	}
-	
 	@Override public void enterIdentifier(KnightCodeParser.IdentifierContext ctx) {
-		System.out.println("EnterIdentifier");
-	}
-	
-	@Override public void exitIdentifier(KnightCodeParser.IdentifierContext ctx) {
-		System.out.println("ExitIdentifier");
-		printContext(ctx.getText());
+		System.out.println("Identifier: " + ctx.getText());
 		
-	}
-	
-	@Override public void enterVartype(KnightCodeParser.VartypeContext ctx) {
-		System.out.println("EnterVartype");
-	}
-	
-	@Override public void exitVartype(KnightCodeParser.VartypeContext ctx) {
-		System.out.println("ExitVartype");
-		printContext(ctx.getText());
-		
-	}
-	
-	@Override public void enterBody(KnightCodeParser.BodyContext ctx) { 
-		System.out.println("EnterBody");
-	}
-	
-	@Override public void exitBody(KnightCodeParser.BodyContext ctx) {
-		System.out.println("ExitBody");
-		printContext(ctx.getText());
-	}
-	
-	@Override public void enterStat(KnightCodeParser.StatContext ctx) {
-		System.out.println("EnterStat");
-	}
-	
-	@Override public void exitStat(KnightCodeParser.StatContext ctx) {
-		System.out.println("ExitStat");
-		printContext(ctx.getText());
+		variables.put(ctx.getText(), null);
 	}
 	
 	@Override public void enterSetvar(KnightCodeParser.SetvarContext ctx) { 
-		System.out.println("EnterSetvar");
+		String variable = ctx.getText().substring(3,4);
+		String value = ctx.getText().substring(6);
+		
+		variables.replace(variable, value);
 	}
 	
 	@Override public void exitSetvar(KnightCodeParser.SetvarContext ctx) {
-		System.out.println("ExitSetvar");
-		printContext(ctx.getText());
-		String var = ctx.getText();
-		var = var.substring(var.indexOf("SET") + 3);
-		var = var.substring(0, var.indexOf(":="));
-		String value = ctx.getText().substring(ctx.getText().lastIndexOf(":=") + 2);
 		
-		variables.put(var, value);
-		
-	}
-	
-	@Override public void enterParenthesis(KnightCodeParser.ParenthesisContext ctx) {
-		System.out.println("EnterParanthesis");
-	}
-	
-	@Override public void exitParenthesis(KnightCodeParser.ParenthesisContext ctx) {
-		System.out.println("ExitParantheis");
-		printContext(ctx.getText());
-	}
-	
-	@Override public void enterMultiplication(KnightCodeParser.MultiplicationContext ctx) {
-		System.out.println("EnterMult");
-	}
-	@Override public void exitMultiplication(KnightCodeParser.MultiplicationContext ctx) {
-		System.out.println("ExitMult");
-		printContext(ctx.getText());
 	}
 	
 	@Override public void enterAddition(KnightCodeParser.AdditionContext ctx) {
-		System.out.println("EnterAddition");
+		
+		String[] vars = ctx.getText().split("\\+");
+		String variable = " ";
+		for(String var : variables.keySet()) {
+			System.out.println(var);
+			if(variables.get(var).equals(ctx.getText()))
+				variable = var;
+		}
+		
+		int leftVar = Integer.parseInt(variables.get(vars[0]));
+		int rightVar = Integer.parseInt(variables.get(vars[1]));
+		
+		mainVisitor.visitVarInsn(Opcodes.ILOAD, 4);
+		mainVisitor.visitVarInsn(Opcodes.ILOAD, 5);
+		mainVisitor.visitInsn(Opcodes.IADD);
+		mainVisitor.visitVarInsn(Opcodes.ISTORE, 6);
+		
+		variables.replace(variable, Integer.toString(newVal));
+		
 	}
 	
 	@Override public void exitAddition(KnightCodeParser.AdditionContext ctx) {
-		System.out.println("ExitAddition");
-		printContext(ctx.getText());
-	}
-	
-	@Override public void enterSubtraction(KnightCodeParser.SubtractionContext ctx) {
-		System.out.println("EnterSubtraction");
 		
+		System.out.println("Why wont you add???" + ctx.getText());
 	}
 	
-	@Override public void exitSubtraction(KnightCodeParser.SubtractionContext ctx) {
-		System.out.println("ExitSubtraction");
-		printContext(ctx.getText());
-	}
-
-	@Override public void enterNumber(KnightCodeParser.NumberContext ctx) { 
-		System.out.println("EnterNumber");
-	}
-	
-	@Override public void exitNumber(KnightCodeParser.NumberContext ctx) { 
-		System.out.println("ExitNumber");
-		printContext(ctx.getText());
-	}
-	
-	@Override public void enterComparison(KnightCodeParser.ComparisonContext ctx) { 
-		System.out.println("EnterCompare");
+	@Override public void enterPrint(KnightCodeParser.PrintContext ctx) {
+		String output = ctx.getChild(1).getText();
 		
+		mainVisitor.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+		mainVisitor.visitLdcInsn(variables.get(output));
+		mainVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream",  "println", "(Ljava/lang/String;)V", false);
 	}
-	
-	@Override public void exitComparison(KnightCodeParser.ComparisonContext ctx) { 
-		System.out.println("ExitCompare");
-		printContext(ctx.getText());
-	}
-
-	@Override public void enterDivision(KnightCodeParser.DivisionContext ctx) {
-		System.out.println("EnterDivision");
-		
-	}
-	
-	@Override public void exitDivision(KnightCodeParser.DivisionContext ctx) {
-		System.out.println("ExitDivision");
-		printContext(ctx.getText());
-	}
-	
-	@Override public void enterId(KnightCodeParser.IdContext ctx) {
-		System.out.println("EnterId");
-		
-	}
-
-	@Override public void exitId(KnightCodeParser.IdContext ctx) {
-		System.out.println("ExitId");
-		printContext(ctx.getText());
-	}
-	
-	@Override public void enterComp(KnightCodeParser.CompContext ctx) { 
-		System.out.println("EnterComp");
-		
-	}
-	
-	@Override public void exitComp(KnightCodeParser.CompContext ctx) { 
-		System.out.println("ExitComp");
-		
-	}
-
-	@Override public void enterPrint(KnightCodeParser.PrintContext ctx) { 
-		System.out.println("EnterPrint");
-		
-	}
-	
-	@Override public void exitPrint(KnightCodeParser.PrintContext ctx) { 
-		System.out.println("ExitPrint");
-		printContext(ctx.getText());
-	}
-	
-	@Override public void enterRead(KnightCodeParser.ReadContext ctx) { 
-		System.out.println("EnterRead");
-		
-	}
-	
-	@Override public void exitRead(KnightCodeParser.ReadContext ctx) { 
-		System.out.println("ExitRead");
-		printContext(ctx.getText());
-	}
-
-	@Override public void enterDecision(KnightCodeParser.DecisionContext ctx) {
-		System.out.println("EnterDecision");
-		
-	}
-	
-	@Override public void exitDecision(KnightCodeParser.DecisionContext ctx) { 
-		System.out.println("ExitDecision");
-		printContext(ctx.getText());
-	}
-	
-	@Override public void enterLoop(KnightCodeParser.LoopContext ctx) { 
-		System.out.println("EnterLoop");
-		
-	}
-	
-	@Override public void exitLoop(KnightCodeParser.LoopContext ctx) {
-		System.out.println("ExitLoop");
-		printContext(ctx.getText());
-	}
-
-	@Override public void enterEveryRule(ParserRuleContext ctx) {
-		
-	}
-	
-	@Override public void exitEveryRule(ParserRuleContext ctx) { }
-
 }
