@@ -9,7 +9,7 @@ BEGIN
 
 SET x := 10
 SET y := 12
-SET z := x + y
+SET z := y+x
 
 PRINT z
 

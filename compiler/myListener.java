@@ -71,12 +71,22 @@ public class myListener extends KnightCodeBaseListener{
 	}
 	
 	@Override public void enterDeclare(KnightCodeParser.DeclareContext ctx) {
-		System.out.println("Declare: " + ctx.getText());
-		
+		System.out.println("DECLARE");
 	}
 	
 	@Override public void enterVariable(KnightCodeParser.VariableContext ctx) {
-		System.out.println("Variable: " + ctx.getText());
+		System.out.println("VARIABLE: " + ctx.getText());
+		String declare = ctx.getText();
+		Variable temp  = new Variable();
+		if(declare.contains("INTEGER")) {
+			String varName = declare.substring(7);
+			variables.put(new Variable(count, varName, "INTEGER"), variables.get(varName));
+		}
+		else {
+			String varName = declare.substring(5);
+			variables.put(new Variable(count, varName, "STRING"), variables.get(varName));
+		}
+		count++;
 	}
 	
 	@Override public void enterVartype(KnightCodeParser.VartypeContext ctx) {
@@ -89,15 +99,39 @@ public class myListener extends KnightCodeBaseListener{
 	
 	@Override public void enterSetvar(KnightCodeParser.SetvarContext ctx) { 
 		System.out.println("entersetVar: " + ctx.getText());
+		Variable temp = new Variable();
 		int index = ctx.getText().indexOf('=');
 		String var = ctx.getText().substring(3, index - 1);
 		String value = ctx.getText().substring(index + 1);
-		if(value.contains("+"))
+		if(value.contains("+") || value.contains("-") || value.contains("*") || value.contains("/"))
 			value = "0";
-		variables.put(new Variable(count, var), value);
-		mainVisitor.visitLdcInsn(Integer.parseInt(value));
-		mainVisitor.visitVarInsn(Opcodes.ISTORE, count);
-		count++;
+		for(Variable v : variables.keySet()) {
+			System.out.println(v.getName() + " matches " + var);
+			if(v.getName().equals(var)) {
+				temp = v;
+			}
+		}
+		if(temp.getName() != null) {
+			System.out.println("I replaced: " + temp.getIndex() + " to be " + value);
+			for(Variable v : variables.keySet()) {
+				if(temp.getIndex() == v.getIndex()) {
+					variables.replace(v, value);
+				}
+			}
+			mainVisitor.visitLdcInsn(Integer.parseInt(value));
+			mainVisitor.visitVarInsn(Opcodes.ISTORE, temp.getIndex());
+			for(Variable v : variables.keySet()) {
+				System.out.println(v.getIndex() + " " + v.getType() + " " + v.getName() + " " + variables.get(var));
+			}
+		}
+		else {
+			System.out.println("I created: " + count + " to be " + value);
+			variables.put(new Variable(count, var, null), value);
+			mainVisitor.visitLdcInsn(Integer.parseInt(value));
+			mainVisitor.visitVarInsn(Opcodes.ISTORE, count);
+			count++;
+		}
+		
 	}
 	
 	@Override public void exitSetvar(KnightCodeParser.SetvarContext ctx) {
@@ -105,11 +139,12 @@ public class myListener extends KnightCodeBaseListener{
 	}
 	
 	@Override public void enterAddition(KnightCodeParser.AdditionContext ctx) {
-		System.out.println("Add: " + ctx.getChild(1).getText());
 		String expression = ctx.getText();
 		String leftVar = expression.substring(0, expression.indexOf('+'));
 		String rightVar = expression.substring(expression.indexOf('+') + 1);
 		int leftIndex = 0, rightIndex = 0, rootIndex = 0;
+		System.out.println(variables.size());
+		
 		for(Variable var : variables.keySet()) {
 			if(var.getName().equals(leftVar)) {
 				leftIndex = var.getIndex();
@@ -118,13 +153,10 @@ public class myListener extends KnightCodeBaseListener{
 				rightIndex = var.getIndex();
 			}
 			if(variables.get(var).equals("0")) {
-				System.out.println("WE GOT A MATCH!!!!");
 				rootIndex = var.getIndex();
 			}
-			System.out.println(variables.get(var) + " matches " + ctx.getText());
 		}
 		
-		System.out.println("RootIndex: " + rootIndex);
 		mainVisitor.visitVarInsn(Opcodes.ILOAD, leftIndex);
 		mainVisitor.visitVarInsn(Opcodes.ILOAD, rightIndex);
 		mainVisitor.visitInsn(Opcodes.IADD);
@@ -134,6 +166,82 @@ public class myListener extends KnightCodeBaseListener{
 	@Override public void exitAddition(KnightCodeParser.AdditionContext ctx) {
 		System.out.println("exitAdd: " + ctx.getText());
 	}
+	
+	@Override public void enterSubtraction(KnightCodeParser.SubtractionContext ctx) {
+		String expression = ctx.getText();
+		String leftVar = expression.substring(0, expression.indexOf('-'));
+		String rightVar = expression.substring(expression.indexOf('-') + 1);
+		int leftIndex = 0, rightIndex = 0, rootIndex = 0;
+		for(Variable var : variables.keySet()) {
+			if(var.getName().equals(leftVar)) {
+				leftIndex = var.getIndex();
+			}
+			if(var.getName().equals(rightVar)) {
+				rightIndex = var.getIndex();
+			}
+			if(variables.get(var).equals("0")) {
+				rootIndex = var.getIndex();
+			}
+		}
+		
+		mainVisitor.visitVarInsn(Opcodes.ILOAD, leftIndex);
+		mainVisitor.visitVarInsn(Opcodes.ILOAD, rightIndex);
+		mainVisitor.visitInsn(Opcodes.ISUB);
+		mainVisitor.visitVarInsn(Opcodes.ISTORE, rootIndex);
+	}
+	
+	@Override public void exitSubtraction(KnightCodeParser.SubtractionContext ctx) { }
+	
+	@Override public void enterDivision(KnightCodeParser.DivisionContext ctx) {
+		String expression = ctx.getText();
+		String leftVar = expression.substring(0, expression.indexOf('/'));
+		String rightVar = expression.substring(expression.indexOf('/') + 1);
+		int leftIndex = 0, rightIndex = 0, rootIndex = 0;
+		for(Variable var : variables.keySet()) {
+			if(var.getName().equals(leftVar)) {
+				leftIndex = var.getIndex();
+			}
+			if(var.getName().equals(rightVar)) {
+				rightIndex = var.getIndex();
+			}
+			if(variables.get(var).equals("0")) {
+				rootIndex = var.getIndex();
+			}
+		}
+		
+		mainVisitor.visitVarInsn(Opcodes.ILOAD, leftIndex);
+		mainVisitor.visitVarInsn(Opcodes.ILOAD, rightIndex);
+		mainVisitor.visitInsn(Opcodes.IDIV);
+		mainVisitor.visitVarInsn(Opcodes.ISTORE, rootIndex);
+	}
+	
+	@Override public void exitDivision(KnightCodeParser.DivisionContext ctx) { }
+	
+	@Override public void enterMultiplication(KnightCodeParser.MultiplicationContext ctx) {
+		String expression = ctx.getText();
+		String leftVar = expression.substring(0, expression.indexOf('*'));
+		String rightVar = expression.substring(expression.indexOf('*') + 1);
+		int leftIndex = 0, rightIndex = 0, rootIndex = 0;
+		for(Variable var : variables.keySet()) {
+			if(var.getName().equals(leftVar)) {
+				leftIndex = var.getIndex();
+			}
+			if(var.getName().equals(rightVar)) {
+				rightIndex = var.getIndex();
+			}
+			if(variables.get(var).equals("0")) {
+				rootIndex = var.getIndex();
+			}
+		}
+		
+		mainVisitor.visitVarInsn(Opcodes.ILOAD, leftIndex);
+		mainVisitor.visitVarInsn(Opcodes.ILOAD, rightIndex);
+		mainVisitor.visitInsn(Opcodes.IMUL);
+		mainVisitor.visitVarInsn(Opcodes.ISTORE, rootIndex);
+	}
+	
+	@Override public void exitMultiplication(KnightCodeParser.MultiplicationContext ctx) { }
+	
 	
 	@Override public void enterBody(KnightCodeParser.BodyContext ctx) { 
 		System.out.println("EnterBody: " + ctx.getText());
@@ -190,24 +298,56 @@ public class myListener extends KnightCodeBaseListener{
 		System.out.println("ExitComp: " + ctx.getText());
 	}
 	
+	@Override public void enterRead(KnightCodeParser.ReadContext ctx) {
+		String var = ctx.getChild(1).getText();
+		int index = 0;
+		System.out.println("SIZE: " + variables.size());
+		for(Variable v : variables.keySet()) {
+			if(v.getName().equals(var)) {
+				index = v.getIndex();
+			}
+			System.out.println(v.getName() + " matches " + var);
+		}
+		System.out.println("Index: " + index);
+		count++;
+		mainVisitor.visitTypeInsn(Opcodes.NEW, "java/util/Scanner");
+		mainVisitor.visitInsn(Opcodes.DUP);
+		mainVisitor.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "in", "Ljava/io/InputStream;");
+		mainVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/util/Scanner", "<init>", "(Ljava/io/InputStream;)V", false);
+		mainVisitor.visitVarInsn(Opcodes.ASTORE, count);
+		mainVisitor.visitVarInsn(Opcodes.ALOAD, count);
+		
+		mainVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/util/Scanner", "next", "(Ljava/lang/String;)V", false);
+		mainVisitor.visitVarInsn(Opcodes.ASTORE, index);
+	}
 	
-	
-	
+	@Override public void exitRead(KnightCodeParser.ReadContext ctx) {
+		
+	}
 	
 	@Override public void enterPrint(KnightCodeParser.PrintContext ctx) {
 		String output = ctx.getChild(1).getText();
 		int outputIndex = 0;
+		Variable temp = new Variable();
 		for(Variable var : variables.keySet()) {
-			System.out.println(var.getName() + " " + var.getIndex() + " " + variables.get(var));
-			if(var.getName().equals(output))
+			System.out.println(var.getName() + " " + var.getIndex() + " " + variables.get(var) + " " + var.getType());
+			if(var.getName().equals(output)) {
 				outputIndex = var.getIndex();
+				temp = var;
+			}
 		}
-		mainVisitor.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
-		mainVisitor.visitVarInsn(Opcodes.ILOAD, outputIndex);
-		mainVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream",  "println", "(I)V", false);
+		if(temp.getType().equals("INTEGER")) {
+			mainVisitor.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+			mainVisitor.visitVarInsn(Opcodes.ILOAD, outputIndex);
+			mainVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream",  "println", "(I)V", false);
+		}
+		else {
+			mainVisitor.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+			mainVisitor.visitVarInsn(Opcodes.ALOAD, outputIndex);
+			mainVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream",  "println", "(Ljava/lang/String;)V", false);
+		}
 	}
 	
 	@Override public void enterEveryRule(ParserRuleContext ctx) {
-		System.out.println("Rule " + ctx.getText());
 	}
 }

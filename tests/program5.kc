@@ -1,0 +1,13 @@
+PROGRAM Program5
+
+DECLARE
+	STRING x
+
+BEGIN
+
+	PRINT "enter a number: "
+	READ x
+
+	PRINT x
+
+END
