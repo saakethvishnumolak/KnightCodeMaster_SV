@@ -83,7 +83,7 @@ public class myListener extends KnightCodeBaseListener{
 			variables.put(new Variable(count, varName, "INTEGER"), variables.get(varName));
 		}
 		else {
-			String varName = declare.substring(5);
+			String varName = declare.substring(6);
 			variables.put(new Variable(count, varName, "STRING"), variables.get(varName));
 		}
 		count++;
@@ -120,9 +120,6 @@ public class myListener extends KnightCodeBaseListener{
 			}
 			mainVisitor.visitLdcInsn(Integer.parseInt(value));
 			mainVisitor.visitVarInsn(Opcodes.ISTORE, temp.getIndex());
-			for(Variable v : variables.keySet()) {
-				System.out.println(v.getIndex() + " " + v.getType() + " " + v.getName() + " " + variables.get(var));
-			}
 		}
 		else {
 			System.out.println("I created: " + count + " to be " + value);
@@ -299,6 +296,7 @@ public class myListener extends KnightCodeBaseListener{
 	}
 	
 	@Override public void enterRead(KnightCodeParser.ReadContext ctx) {
+		System.out.println("Did you get here?");
 		String var = ctx.getChild(1).getText();
 		int index = 0;
 		System.out.println("SIZE: " + variables.size());
@@ -316,8 +314,7 @@ public class myListener extends KnightCodeBaseListener{
 		mainVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/util/Scanner", "<init>", "(Ljava/io/InputStream;)V", false);
 		mainVisitor.visitVarInsn(Opcodes.ASTORE, count);
 		mainVisitor.visitVarInsn(Opcodes.ALOAD, count);
-		
-		mainVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/util/Scanner", "next", "(Ljava/lang/String;)V", false);
+		mainVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/util/Scanner", "next", "()Ljava/lang/String;", false);
 		mainVisitor.visitVarInsn(Opcodes.ASTORE, index);
 	}
 	
@@ -329,23 +326,35 @@ public class myListener extends KnightCodeBaseListener{
 		String output = ctx.getChild(1).getText();
 		int outputIndex = 0;
 		Variable temp = new Variable();
+		System.out.println("COUNT: " + count);
 		for(Variable var : variables.keySet()) {
 			System.out.println(var.getName() + " " + var.getIndex() + " " + variables.get(var) + " " + var.getType());
-			if(var.getName().equals(output)) {
+			System.out.println(var.getName() + " equals " + output);
+			
+			if(var.getName().equals(output) && var.getType().equals("INTEGER")) {
 				outputIndex = var.getIndex();
 				temp = var;
+				mainVisitor.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+				mainVisitor.visitVarInsn(Opcodes.ILOAD, outputIndex);
+				mainVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream",  "println", "(I)V", false);
+			}
+			else if(var.getName().equals(output) && var.getType().equals("STRING")) {
+				outputIndex = var.getIndex();
+				temp = var;
+				mainVisitor.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+				mainVisitor.visitVarInsn(Opcodes.ALOAD, outputIndex);
+				mainVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream",  "println", "(Ljava/lang/String;)V", false);
+			}
+			else {
+				mainVisitor.visitLdcInsn(output);
+				mainVisitor.visitVarInsn(Opcodes.ASTORE, count);
+				mainVisitor.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+				mainVisitor.visitVarInsn(Opcodes.ALOAD, count);
+				mainVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream",  "println", "(Ljava/lang/String;)V", false);
+
 			}
 		}
-		if(temp.getType().equals("INTEGER")) {
-			mainVisitor.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
-			mainVisitor.visitVarInsn(Opcodes.ILOAD, outputIndex);
-			mainVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream",  "println", "(I)V", false);
-		}
-		else {
-			mainVisitor.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
-			mainVisitor.visitVarInsn(Opcodes.ALOAD, outputIndex);
-			mainVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream",  "println", "(Ljava/lang/String;)V", false);
-		}
+			
 	}
 	
 	@Override public void enterEveryRule(ParserRuleContext ctx) {
