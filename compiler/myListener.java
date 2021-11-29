@@ -298,11 +298,13 @@ public class myListener extends KnightCodeBaseListener{
 	@Override public void enterRead(KnightCodeParser.ReadContext ctx) {
 		System.out.println("Did you get here?");
 		String var = ctx.getChild(1).getText();
+		Variable temp = new Variable();
 		int index = 0;
 		System.out.println("SIZE: " + variables.size());
 		for(Variable v : variables.keySet()) {
 			if(v.getName().equals(var)) {
 				index = v.getIndex();
+				temp = v;
 			}
 			System.out.println(v.getName() + " matches " + var);
 		}
@@ -315,7 +317,16 @@ public class myListener extends KnightCodeBaseListener{
 		mainVisitor.visitVarInsn(Opcodes.ASTORE, count);
 		mainVisitor.visitVarInsn(Opcodes.ALOAD, count);
 		mainVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/util/Scanner", "next", "()Ljava/lang/String;", false);
-		mainVisitor.visitVarInsn(Opcodes.ASTORE, index);
+		
+		if(temp.getType().equals("INTEGER")) {
+			mainVisitor.visitVarInsn(Opcodes.ASTORE, index);
+			mainVisitor.visitVarInsn(Opcodes.ALOAD, index);
+			mainVisitor.visitMethodInsn(Opcodes.INVOKESTATIC, "java/lang/Integer", "parseInt", "(Ljava/lang/String;)I", false);
+			mainVisitor.visitVarInsn(Opcodes.ISTORE, index);
+		}
+		else {
+			mainVisitor.visitVarInsn(Opcodes.ASTORE, index);
+		}
 	}
 	
 	@Override public void exitRead(KnightCodeParser.ReadContext ctx) {
