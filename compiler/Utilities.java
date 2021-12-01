@@ -1,3 +1,16 @@
+/**
+ * 
+ * Description: Used to write the file using the bytearray and file name
+ * 
+ * @author Justin Mattix
+ * @author David Jones
+ * @author Taden Duerod
+ * @version 1.0
+ * Programming Project Four
+ * CS-322 Compiler Construction
+ * Fall 2021
+ * 
+ */
 package compiler;
 
 import java.io.*;
