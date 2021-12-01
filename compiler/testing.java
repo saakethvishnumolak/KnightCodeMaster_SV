@@ -1,3 +1,16 @@
+/**
+ * 
+ * Description: Used to generate ASM code using asmify
+ * 
+ * @author Justin Mattix
+ * @author David Jones
+ * @author Taden Duerod
+ * @version 13.0
+ * Programming Project 4
+ * CS322 - Compiler Construction
+ * Fall 2021
+ *
+ */
 package compiler;
 
 import java.util.Scanner;
