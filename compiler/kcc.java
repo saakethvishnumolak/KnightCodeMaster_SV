@@ -1,6 +1,11 @@
 package compiler;
 /**
- * This class encapsulates a basic grammar test.
+ * Description:
+ * @author Justin Mattix
+ * version 13
+ * Programming Project 4
+ * CS322 - Compiler Construction
+ * Fall 2021
  */
 
 import java.io.IOException;

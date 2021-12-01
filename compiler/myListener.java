@@ -1,5 +1,17 @@
 package compiler;
 
+/**
+ * Description: 
+ * 
+ * @author Justin Mattix
+ *
+ * @version 13
+ * Programming Project 4
+ * CS322 - Compiler Construction
+ * Fall 2021
+ * 
+ */
+
 import lexparse.*;
 
 import java.util.Arrays;
@@ -17,6 +29,9 @@ public class myListener extends KnightCodeBaseListener{
 	private MethodVisitor mainVisitor;
 	
 	int count = 1;
+	int labelcounter = 1;
+	
+	private Label startLabel;
 	
 	HashMap<Variable, String> variables = new HashMap<Variable, String>();
 	
@@ -41,11 +56,9 @@ public class myListener extends KnightCodeBaseListener{
 	}
 	
 	public void closeClass() {
-		
 		mainVisitor.visitInsn(Opcodes.RETURN);
-		mainVisitor.visitMaxs(1,1);
+		mainVisitor.visitMaxs(3,3);
 		mainVisitor.visitEnd();
-		
 		cw.visitEnd();
 		
 		byte[] b = cw.toByteArray();
@@ -75,16 +88,15 @@ public class myListener extends KnightCodeBaseListener{
 	}
 	
 	@Override public void enterVariable(KnightCodeParser.VariableContext ctx) {
-		System.out.println("VARIABLE: " + ctx.getText());
 		String declare = ctx.getText();
 		Variable temp  = new Variable();
 		if(declare.contains("INTEGER")) {
 			String varName = declare.substring(7);
-			variables.put(new Variable(count, varName, "INTEGER"), variables.get(varName));
+			variables.put(new Variable(count, varName, "INTEGER"), "0");
 		}
 		else {
 			String varName = declare.substring(6);
-			variables.put(new Variable(count, varName, "STRING"), variables.get(varName));
+			variables.put(new Variable(count, varName, "STRING"), "0");
 		}
 		count++;
 	}
@@ -98,7 +110,6 @@ public class myListener extends KnightCodeBaseListener{
 	}
 	
 	@Override public void enterSetvar(KnightCodeParser.SetvarContext ctx) { 
-		System.out.println("entersetVar: " + ctx.getText());
 		Variable temp = new Variable();
 		int index = ctx.getText().indexOf('=');
 		String var = ctx.getText().substring(3, index - 1);
@@ -106,13 +117,11 @@ public class myListener extends KnightCodeBaseListener{
 		if(value.contains("+") || value.contains("-") || value.contains("*") || value.contains("/"))
 			value = "0";
 		for(Variable v : variables.keySet()) {
-			System.out.println(v.getName() + " matches " + var);
 			if(v.getName().equals(var)) {
 				temp = v;
 			}
 		}
 		if(temp.getName() != null) {
-			System.out.println("I replaced: " + temp.getIndex() + " to be " + value);
 			for(Variable v : variables.keySet()) {
 				if(temp.getIndex() == v.getIndex()) {
 					variables.replace(v, value);
@@ -122,7 +131,6 @@ public class myListener extends KnightCodeBaseListener{
 			mainVisitor.visitVarInsn(Opcodes.ISTORE, temp.getIndex());
 		}
 		else {
-			System.out.println("I created: " + count + " to be " + value);
 			variables.put(new Variable(count, var, null), value);
 			mainVisitor.visitLdcInsn(Integer.parseInt(value));
 			mainVisitor.visitVarInsn(Opcodes.ISTORE, count);
@@ -140,7 +148,7 @@ public class myListener extends KnightCodeBaseListener{
 		String leftVar = expression.substring(0, expression.indexOf('+'));
 		String rightVar = expression.substring(expression.indexOf('+') + 1);
 		int leftIndex = 0, rightIndex = 0, rootIndex = 0;
-		System.out.println(variables.size());
+		
 		
 		for(Variable var : variables.keySet()) {
 			if(var.getName().equals(leftVar)) {
@@ -288,7 +296,6 @@ public class myListener extends KnightCodeBaseListener{
 	}
 	@Override public void enterComp(KnightCodeParser.CompContext ctx) {
 		System.out.println("EnterComp: " + ctx.getText());
-
 	}
 	
 	@Override public void exitComp(KnightCodeParser.CompContext ctx) {
@@ -296,19 +303,15 @@ public class myListener extends KnightCodeBaseListener{
 	}
 	
 	@Override public void enterRead(KnightCodeParser.ReadContext ctx) {
-		System.out.println("Did you get here?");
 		String var = ctx.getChild(1).getText();
 		Variable temp = new Variable();
 		int index = 0;
-		System.out.println("SIZE: " + variables.size());
 		for(Variable v : variables.keySet()) {
 			if(v.getName().equals(var)) {
 				index = v.getIndex();
 				temp = v;
 			}
-			System.out.println(v.getName() + " matches " + var);
 		}
-		System.out.println("Index: " + index);
 		count++;
 		mainVisitor.visitTypeInsn(Opcodes.NEW, "java/util/Scanner");
 		mainVisitor.visitInsn(Opcodes.DUP);
@@ -316,6 +319,7 @@ public class myListener extends KnightCodeBaseListener{
 		mainVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, "java/util/Scanner", "<init>", "(Ljava/io/InputStream;)V", false);
 		mainVisitor.visitVarInsn(Opcodes.ASTORE, count);
 		mainVisitor.visitVarInsn(Opcodes.ALOAD, count);
+		count++;
 		mainVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/util/Scanner", "next", "()Ljava/lang/String;", false);
 		
 		if(temp.getType().equals("INTEGER")) {
@@ -333,14 +337,59 @@ public class myListener extends KnightCodeBaseListener{
 		
 	}
 	
+	@Override public void enterLoop(KnightCodeParser.LoopContext ctx) {
+		String left = ctx.getChild(1).getText();
+		String right = ctx.getChild(3).getText();
+		startLabel = new Label();
+		Variable leftVar = new Variable();
+		Variable rightVar = new Variable();
+		
+		for(Variable var : variables.keySet()) {
+			if(var.getName().equals(left)) {
+				leftVar = var;
+			}
+			else if(var.getName().equals(right)) {
+				rightVar = var;
+			}
+		}
+		if(variables.keySet().contains(leftVar)){
+			mainVisitor.visitVarInsn(Opcodes.ILOAD, leftVar.getIndex());
+		}
+		else {
+			mainVisitor.visitIntInsn(Opcodes.BIPUSH, Integer.parseInt(left));
+		}
+		if(variables.keySet().contains(rightVar)) {
+			mainVisitor.visitVarInsn(Opcodes.ILOAD, rightVar.getIndex());
+		}
+		else {
+			mainVisitor.visitIntInsn(Opcodes.BIPUSH, Integer.parseInt(right));
+		}
+		
+	}
+	
+	@Override public void exitLoop(KnightCodeParser.LoopContext ctx) {
+		//would only compile with this here
+		mainVisitor.visitLabel(startLabel);
+
+		if(ctx.getChild(2).getText().equals(">")) {
+			mainVisitor.visitJumpInsn(Opcodes.IF_ICMPGT, startLabel);
+		}
+		else if(ctx.getChild(2).getText().equals("<")) {
+			mainVisitor.visitJumpInsn(Opcodes.IF_ICMPLT, startLabel);
+		}
+		if(ctx.getChild(2).getText().equals("<>")) {
+			mainVisitor.visitJumpInsn(Opcodes.IF_ICMPNE, startLabel);
+		}
+		if(ctx.getChild(2).getText().equals(":=")) {
+			mainVisitor.visitJumpInsn(Opcodes.IF_ICMPEQ, startLabel);
+		}
+	}
+	
 	@Override public void enterPrint(KnightCodeParser.PrintContext ctx) {
 		String output = ctx.getChild(1).getText();
 		int outputIndex = 0;
 		Variable temp = new Variable();
-		System.out.println("COUNT: " + count);
 		for(Variable var : variables.keySet()) {
-			System.out.println(var.getName() + " " + var.getIndex() + " " + variables.get(var) + " " + var.getType());
-			System.out.println(var.getName() + " equals " + output);
 			
 			if(var.getName().equals(output) && var.getType().equals("INTEGER")) {
 				outputIndex = var.getIndex();
@@ -348,6 +397,7 @@ public class myListener extends KnightCodeBaseListener{
 				mainVisitor.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
 				mainVisitor.visitVarInsn(Opcodes.ILOAD, outputIndex);
 				mainVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream",  "println", "(I)V", false);
+				break;
 			}
 			else if(var.getName().equals(output) && var.getType().equals("STRING")) {
 				outputIndex = var.getIndex();
@@ -355,6 +405,7 @@ public class myListener extends KnightCodeBaseListener{
 				mainVisitor.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
 				mainVisitor.visitVarInsn(Opcodes.ALOAD, outputIndex);
 				mainVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream",  "println", "(Ljava/lang/String;)V", false);
+				break;
 			}
 			else {
 				mainVisitor.visitLdcInsn(output);
@@ -362,6 +413,7 @@ public class myListener extends KnightCodeBaseListener{
 				mainVisitor.visitFieldInsn(Opcodes.GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
 				mainVisitor.visitVarInsn(Opcodes.ALOAD, count);
 				mainVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, "java/io/PrintStream",  "println", "(Ljava/lang/String;)V", false);
+				break;
 
 			}
 		}
@@ -369,5 +421,6 @@ public class myListener extends KnightCodeBaseListener{
 	}
 	
 	@Override public void enterEveryRule(ParserRuleContext ctx) {
+		System.out.println(ctx.getText());
 	}
 }
