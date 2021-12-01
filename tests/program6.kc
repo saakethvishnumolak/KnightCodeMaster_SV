@@ -1,0 +1,18 @@
+PROGRAM Program6
+
+DECLARE 
+	INTEGER x
+	INTEGER y
+	
+	
+BEGIN
+
+SET x := 5
+
+IF x > 0 DO
+	PRINT 5
+	SET y := 2
+	PRINT y
+	PRINT Finished
+ENDIF
+END

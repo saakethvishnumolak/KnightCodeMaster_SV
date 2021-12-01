@@ -1,13 +1,21 @@
 PROGRAM Program5
 
-DECLARE
+DECLARE 
 	INTEGER x
-
+	INTEGER y
+	INTEGER z
+	INTEGER s
+	
 BEGIN
 
-	PRINT "enter a number: "
-	READ x
+SET x := 68
+SET y := 50
+SET z := x + y
+z ADD x
 
-	PRINT x
+PRINT z
+
+SET s := z * x
+PRINT s
 
 END

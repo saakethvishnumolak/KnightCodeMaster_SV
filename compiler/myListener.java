@@ -29,7 +29,6 @@ public class myListener extends KnightCodeBaseListener{
 	private MethodVisitor mainVisitor;
 	
 	int count = 1;
-	int labelcounter = 1;
 	
 	private Label startLabel;
 	
@@ -141,6 +140,64 @@ public class myListener extends KnightCodeBaseListener{
 	
 	@Override public void exitSetvar(KnightCodeParser.SetvarContext ctx) {
 		System.out.println("exitsetVar: " + ctx.getText());
+	}
+	
+	@Override public void enterParenthesis(KnightCodeParser.ParenthesisContext ctx) { 
+		System.out.println("EnterParen: " + ctx.getChild(1).getText());
+		String equation = ctx.getChild(1).getText();
+		String splitter = " ";
+		Variable leftVar = new Variable();
+		Variable rightVar = new Variable();
+		if(equation.contains("/")) {
+			splitter = "/";
+		}
+		else if(equation.contains("*")) {
+			splitter = "*";
+		}
+		else if(equation.contains("+")) {
+			splitter = "+";
+		}
+		else if(equation.contains("-")) {
+			splitter = "-";
+		}
+		String[] eq = equation.split(splitter);
+		for(Variable var : variables.keySet()) {
+			if(var.getName().equals(eq[0])) {
+				leftVar = var;
+			}
+			if(var.getName().equals(eq[1])) {
+				rightVar = var;
+			}
+		}
+		if(variables.keySet().contains(leftVar)){
+			mainVisitor.visitVarInsn(Opcodes.ILOAD, leftVar.getIndex());
+		}
+		else {
+			mainVisitor.visitIntInsn(Opcodes.BIPUSH, Integer.parseInt(eq[0]));
+		}
+		if(variables.keySet().contains(rightVar)) {
+			mainVisitor.visitVarInsn(Opcodes.ILOAD, rightVar.getIndex());
+		}
+		else {
+			mainVisitor.visitIntInsn(Opcodes.BIPUSH, Integer.parseInt(eq[1]));
+		}
+		
+		if(splitter.equals("/")) {
+			mainVisitor.visitInsn(Opcodes.IDIV);
+		}
+		else if(splitter.equals("*")) {
+			mainVisitor.visitInsn(Opcodes.IMUL);
+		}
+		if(splitter.equals("+")) {
+			mainVisitor.visitInsn(Opcodes.IADD);
+		}
+		if(splitter.equals("-")) {
+			mainVisitor.visitInsn(Opcodes.ISUB);
+		}
+		
+	}
+	@Override public void exitParenthesis(KnightCodeParser.ParenthesisContext ctx) {
+		System.out.println("ExitParen: " + ctx.getText());
 	}
 	
 	@Override public void enterAddition(KnightCodeParser.AdditionContext ctx) {
@@ -281,7 +338,30 @@ public class myListener extends KnightCodeBaseListener{
 	}
 	
 	@Override public void enterDecision(KnightCodeParser.DecisionContext ctx) {
-		System.out.println("Decision: " + ctx.getText());
+		Label label2 = new Label();
+		Variable leftVar = new Variable();
+		Variable rightVar = new Variable();
+		for(Variable var : variables.keySet()) {
+			if(var.getName().equals(ctx.getChild(1).getText())) {
+				leftVar = var;
+			}
+			if(var.getName().equals(ctx.getChild(1).getText())) {
+				rightVar = var;
+			}
+		}
+		if(ctx.getChild(2).getText().equals(">")) {
+			mainVisitor.visitJumpInsn(Opcodes.IF_ICMPGT, label2);
+		}
+		else if(ctx.getChild(2).getText().equals("<")) {
+			mainVisitor.visitJumpInsn(Opcodes.IF_ICMPLT, label2);
+		}
+		else if(ctx.getChild(2).getText().equals("<>")) {
+			mainVisitor.visitJumpInsn(Opcodes.IF_ICMPNE, label2);
+		}
+		else if(ctx.getChild(2).getText().equals(":=")) {
+			mainVisitor.visitJumpInsn(Opcodes.IF_ICMPEQ, label2);
+		}
+		mainVisitor.visitLabel(label2);
 	}
 	
 	@Override public void exitDecision(KnightCodeParser.DecisionContext ctx) {
@@ -377,10 +457,10 @@ public class myListener extends KnightCodeBaseListener{
 		else if(ctx.getChild(2).getText().equals("<")) {
 			mainVisitor.visitJumpInsn(Opcodes.IF_ICMPLT, startLabel);
 		}
-		if(ctx.getChild(2).getText().equals("<>")) {
+		else if(ctx.getChild(2).getText().equals("<>")) {
 			mainVisitor.visitJumpInsn(Opcodes.IF_ICMPNE, startLabel);
 		}
-		if(ctx.getChild(2).getText().equals(":=")) {
+		else if(ctx.getChild(2).getText().equals(":=")) {
 			mainVisitor.visitJumpInsn(Opcodes.IF_ICMPEQ, startLabel);
 		}
 	}
