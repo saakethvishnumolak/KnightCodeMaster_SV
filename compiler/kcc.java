@@ -1,8 +1,12 @@
 package compiler;
 /**
- * Description:
+ * 
+ * Description: This class is used to create the basic tools needed for the compiler and sets a starting point for the parser
+ * 
  * @author Justin Mattix
- * version 13
+ * @author David Jones
+ * @author Taden Duerod
+ * version 13.0
  * Programming Project 4
  * CS322 - Compiler Construction
  * Fall 2021
@@ -22,7 +26,10 @@ import lexparse.*;
 
 public class kcc{
 
-
+	/**
+	 * Main method
+	 * @param args argument to be entered into the main method
+	 */
     public static void main(String[] args){
         CharStream input;
         KnightCodeLexer lexer;
