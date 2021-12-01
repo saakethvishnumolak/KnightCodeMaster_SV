@@ -1,11 +1,12 @@
 package compiler;
 
 /**
- * Description: 
+ * Description: This class is used to do most of the calculations needed in order to perform actions with the compiler. 
  * 
  * @author Justin Mattix
- *
- * @version 13
+ * @author David Jones
+ * @author Taden Duerod
+ * @version 13.0
  * Programming Project 4
  * CS322 - Compiler Construction
  * Fall 2021
@@ -34,10 +35,16 @@ public class myListener extends KnightCodeBaseListener{
 	
 	HashMap<Variable, String> variables = new HashMap<Variable, String>();
 	
+	/**
+	 * Used to create the listener
+	 * @param programName Name of the Program
+	 */
 	public myListener(String programName) {
 		this.programName = programName;
 	}
-	
+	/**
+	 * Used to setup the foundation to use the bytecode
+	 */
 	public void setupClass() {
 		cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
 		cw.visit(Opcodes.V11, Opcodes.ACC_PUBLIC, this.programName, null, "java/lang/Object", null);
@@ -53,7 +60,9 @@ public class myListener extends KnightCodeBaseListener{
 		mainVisitor = cw.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC, "main", "([Ljava/lang/String;)V", null, null);
 		mainVisitor.visitCode();
 	}
-	
+	/**
+	 * Used to exit classes 
+	 */
 	public void closeClass() {
 		mainVisitor.visitInsn(Opcodes.RETURN);
 		mainVisitor.visitMaxs(3,3);
@@ -66,15 +75,25 @@ public class myListener extends KnightCodeBaseListener{
 		
 		System.out.println("Done!");
 	}
-	
+	/**
+	 * Prints out the context
+	 * @param ctx context found in baseListener
+	 */
 	private void printContext(String ctx) {
 		System.out.println(ctx);
 	}
+	/**
+	 * Enters the specified test
+	 * @param ctx context found in baseListener
+	 */
 	@Override public void enterFile(KnightCodeParser.FileContext ctx) {
 		setupClass();
 		System.out.println("EnterFile");
 	}
-	
+	/**
+	 * Exits the test file that was entered in enterFile
+	 * @param ctx context found in baseListener
+	 */
 	@Override public void exitFile(KnightCodeParser.FileContext ctx) { 
 		System.out.println("ExitFile");
 		printContext(ctx.getText());
@@ -85,7 +104,10 @@ public class myListener extends KnightCodeBaseListener{
 	@Override public void enterDeclare(KnightCodeParser.DeclareContext ctx) {
 		System.out.println("DECLARE");
 	}
-	
+	/**
+	 * Uses the context to put variables into the hashmap
+	 * @param ctx context found in baseListener
+	 */
 	@Override public void enterVariable(KnightCodeParser.VariableContext ctx) {
 		String declare = ctx.getText();
 		Variable temp  = new Variable();
@@ -99,15 +121,24 @@ public class myListener extends KnightCodeBaseListener{
 		}
 		count++;
 	}
-	
+	/**
+	 * Prints out the variable type that was entered
+	 * @param ctx context found in baseListener
+	 */
 	@Override public void enterVartype(KnightCodeParser.VartypeContext ctx) {
 		System.out.println("Vartype: " + ctx.getText());
 	}
-	
+	/**
+	 * Prints the type of identifier that was entered
+	 * @param ctx context found in baseListener
+	 */
 	@Override public void enterIdentifier(KnightCodeParser.IdentifierContext ctx) {
-		System.out.println("Identifiy: " + ctx.getText());
+		System.out.println("Identify: " + ctx.getText());
 	}
-	
+	/**
+	 * Used to determine which arithmetic operation is needed and points to the correct method
+	 * @param ctx context found in baseListener
+	 */
 	@Override public void enterSetvar(KnightCodeParser.SetvarContext ctx) { 
 		Variable temp = new Variable();
 		int index = ctx.getText().indexOf('=');
@@ -137,11 +168,17 @@ public class myListener extends KnightCodeBaseListener{
 		}
 		
 	}
-	
+	/**
+	 * Exits Setvar
+	 * @param ctx gathers information from the source code to ensure everything was declared properly
+	 */
 	@Override public void exitSetvar(KnightCodeParser.SetvarContext ctx) {
 		System.out.println("exitsetVar: " + ctx.getText());
 	}
-	
+	/**
+	 * Lets the context into each variable and the operator. Generates bytecode based off the operator
+	 * @param ctx
+	 */
 	@Override public void enterParenthesis(KnightCodeParser.ParenthesisContext ctx) { 
 		System.out.println("EnterParen: " + ctx.getChild(1).getText());
 		String equation = ctx.getChild(1).getText();
@@ -181,7 +218,7 @@ public class myListener extends KnightCodeBaseListener{
 		else {
 			mainVisitor.visitIntInsn(Opcodes.BIPUSH, Integer.parseInt(eq[1]));
 		}
-		
+
 		if(splitter.equals("/")) {
 			mainVisitor.visitInsn(Opcodes.IDIV);
 		}
@@ -194,12 +231,19 @@ public class myListener extends KnightCodeBaseListener{
 		if(splitter.equals("-")) {
 			mainVisitor.visitInsn(Opcodes.ISUB);
 		}
-		
+
 	}
+	/**
+	 * Exits Parathesis
+	 * @param ctx
+	 */
 	@Override public void exitParenthesis(KnightCodeParser.ParenthesisContext ctx) {
 		System.out.println("ExitParen: " + ctx.getText());
 	}
-	
+	/**
+	 * Used to perform addition
+	 * @param ctx context found in baseListener
+	 */
 	@Override public void enterAddition(KnightCodeParser.AdditionContext ctx) {
 		String expression = ctx.getText();
 		String leftVar = expression.substring(0, expression.indexOf('+'));
@@ -224,11 +268,17 @@ public class myListener extends KnightCodeBaseListener{
 		mainVisitor.visitInsn(Opcodes.IADD);
 		mainVisitor.visitVarInsn(Opcodes.ISTORE, rootIndex);
 	}
-	
+	/**
+	 * Exits addition method
+	 * @param ctx context found in baseListener
+	 */
 	@Override public void exitAddition(KnightCodeParser.AdditionContext ctx) {
 		System.out.println("exitAdd: " + ctx.getText());
 	}
-	
+	/**
+	 * Used to perform subtraction
+	 * @param ctx context found in baseListener
+	 */
 	@Override public void enterSubtraction(KnightCodeParser.SubtractionContext ctx) {
 		String expression = ctx.getText();
 		String leftVar = expression.substring(0, expression.indexOf('-'));
@@ -251,9 +301,17 @@ public class myListener extends KnightCodeBaseListener{
 		mainVisitor.visitInsn(Opcodes.ISUB);
 		mainVisitor.visitVarInsn(Opcodes.ISTORE, rootIndex);
 	}
-	
-	@Override public void exitSubtraction(KnightCodeParser.SubtractionContext ctx) { }
-	
+	/**
+	 * Exits subtraction method
+	 * @param ctx
+	 */
+	@Override public void exitSubtraction(KnightCodeParser.SubtractionContext ctx) { 
+		System.out.println("exitSub: " + ctx.getText());
+	}
+	/**
+	 * Performs Division
+	 * @param ctx context found in baseListener
+	 */
 	@Override public void enterDivision(KnightCodeParser.DivisionContext ctx) {
 		String expression = ctx.getText();
 		String leftVar = expression.substring(0, expression.indexOf('/'));
@@ -276,9 +334,15 @@ public class myListener extends KnightCodeBaseListener{
 		mainVisitor.visitInsn(Opcodes.IDIV);
 		mainVisitor.visitVarInsn(Opcodes.ISTORE, rootIndex);
 	}
-	
+	/**
+	 * Exits Division method
+	 * @param ctx context found in baseListener
+	 */
 	@Override public void exitDivision(KnightCodeParser.DivisionContext ctx) { }
-	
+	/**
+	 * Performs multiplication
+	 * @param ctx context found in baseListener
+	 */
 	@Override public void enterMultiplication(KnightCodeParser.MultiplicationContext ctx) {
 		String expression = ctx.getText();
 		String leftVar = expression.substring(0, expression.indexOf('*'));
@@ -301,43 +365,75 @@ public class myListener extends KnightCodeBaseListener{
 		mainVisitor.visitInsn(Opcodes.IMUL);
 		mainVisitor.visitVarInsn(Opcodes.ISTORE, rootIndex);
 	}
-	
+	/**
+	 * Exits Multiplication method
+	 * @param ctx context found in baseListener
+	 */
 	@Override public void exitMultiplication(KnightCodeParser.MultiplicationContext ctx) { }
 	
-	
+	/**
+	 * Enters Body
+	 * @param ctx
+	 */
 	@Override public void enterBody(KnightCodeParser.BodyContext ctx) { 
 		System.out.println("EnterBody: " + ctx.getText());
 	}
-	
+	/**
+	 * Exits Body
+	 * @param ctx context found in baseListener
+	 */
 	@Override public void exitBody(KnightCodeParser.BodyContext ctx) {
 		System.out.println("ExitBody: " + ctx.getText());
 	}
-	
+	/**
+	 * Enters Stat
+	 * @param ctx context found in baseListener
+	 */
 	@Override public void enterStat(KnightCodeParser.StatContext ctx) {
 		System.out.println("EnterStat: " + ctx.getText());
 	}
-	
+	/**
+	 * Exits Stat
+	 * @param ctx context found in baseListener
+	 */
 	@Override public void exitStat(KnightCodeParser.StatContext ctx) {
 		System.out.println("ExitStat: " + ctx.getText());
 	}
-	
+	/**
+	 * Enters Number
+	 * @param ctx context found in baseListener
+	 */
 	@Override public void enterNumber(KnightCodeParser.NumberContext ctx) {
 		System.out.println("EnterNumber: " + ctx.getText());
 		mainVisitor.visitIntInsn(Opcodes.BIPUSH, Integer.parseInt(ctx.getText()));
 	}
-	
+	/**
+	 * Exits Number
+	 * @param ctx context found in baseListener
+	 */
 	@Override public void exitNumber(KnightCodeParser.NumberContext ctx) {
 		System.out.println("ExitNumber: " + ctx.getText());
 	}
+	/**
+	 * Enters Comparison
+	 * @param ctx context found in baseListener
+	 */
 	@Override public void enterComparison(KnightCodeParser.ComparisonContext ctx) {
 		System.out.println("EnterCompare: " + ctx.getText());
 	}
-	
+	/**
+	 * Exits Comparison
+	 * @param ctx context found in baseListener
+	 */
 	@Override public void exitComparison(KnightCodeParser.ComparisonContext ctx) { 
 		System.out.println("ExitCompare: " + ctx.getText());
 	}
-	
+	/**
+	 * Decides what to do based off the child and the operator
+	 * @param ctx context found in baseListener
+	 */
 	@Override public void enterDecision(KnightCodeParser.DecisionContext ctx) {
+		System.out.println("Decision: " + ctx.getText());
 		Label label2 = new Label();
 		Variable leftVar = new Variable();
 		Variable rightVar = new Variable();
@@ -363,25 +459,45 @@ public class myListener extends KnightCodeBaseListener{
 		}
 		mainVisitor.visitLabel(label2);
 	}
-	
+	/**
+	 * Exits Decision
+	 * @param ctx context found in baseListener
+	 */
 	@Override public void exitDecision(KnightCodeParser.DecisionContext ctx) {
 		System.out.println("ExitDecision: " + ctx.getText());
 	}
+	/**
+	 * Enters ID
+	 * @param ctx context found in baseListener
+	 */
 	@Override public void enterId(KnightCodeParser.IdContext ctx) {
 		System.out.println("EnterID: " + ctx.getText());
 	}
-	
+	/**
+	 * Exits ID
+	 * @param ctx context found in baseListener
+	 */
 	@Override public void exitId(KnightCodeParser.IdContext ctx) {
 		System.out.println("ExitID: " + ctx.getText());
 	}
+	/**
+	 * Enters Comp
+	 * @param ctx context found in baseListener
+	 */
 	@Override public void enterComp(KnightCodeParser.CompContext ctx) {
 		System.out.println("EnterComp: " + ctx.getText());
 	}
-	
+	/**
+	 * Exits Comp
+	 * @param ctx context found in baseListener
+	 */
 	@Override public void exitComp(KnightCodeParser.CompContext ctx) {
 		System.out.println("ExitComp: " + ctx.getText());
 	}
-	
+	/**
+	 * Creates a Scanner and parses the input if it is an integer
+	 * @param ctx context found in baseListener
+	 */
 	@Override public void enterRead(KnightCodeParser.ReadContext ctx) {
 		String var = ctx.getChild(1).getText();
 		Variable temp = new Variable();
@@ -412,11 +528,17 @@ public class myListener extends KnightCodeBaseListener{
 			mainVisitor.visitVarInsn(Opcodes.ASTORE, index);
 		}
 	}
-	
+	/**
+	 * Exits Read
+	 * @param ctx context found in baseListener
+	 */
 	@Override public void exitRead(KnightCodeParser.ReadContext ctx) {
 		
 	}
-	
+	/**
+	 * Grabs the variables based on the side of the comparison, and loads each side of the comparison if they are not integers
+	 * @param ctx context found in baseListener
+	 */
 	@Override public void enterLoop(KnightCodeParser.LoopContext ctx) {
 		String left = ctx.getChild(1).getText();
 		String right = ctx.getChild(3).getText();
@@ -446,7 +568,10 @@ public class myListener extends KnightCodeBaseListener{
 		}
 		
 	}
-	
+	/**
+	 * Uses the middle child (the operator) and uses that child to perform the operation needed
+	 * @param ctx context found in baseListener
+	 */
 	@Override public void exitLoop(KnightCodeParser.LoopContext ctx) {
 		//would only compile with this here
 		mainVisitor.visitLabel(startLabel);
@@ -464,7 +589,10 @@ public class myListener extends KnightCodeBaseListener{
 			mainVisitor.visitJumpInsn(Opcodes.IF_ICMPEQ, startLabel);
 		}
 	}
-	
+	/**
+	 * Grabs the child and determines which print is needed based on the variable type
+	 * @param ctx context found in baseListener
+	 */
 	@Override public void enterPrint(KnightCodeParser.PrintContext ctx) {
 		String output = ctx.getChild(1).getText();
 		int outputIndex = 0;
@@ -499,7 +627,10 @@ public class myListener extends KnightCodeBaseListener{
 		}
 			
 	}
-	
+	/**
+	 * Prints the context for every single rule
+	 * @param ctx context found in baseListener
+	 */
 	@Override public void enterEveryRule(ParserRuleContext ctx) {
 		System.out.println(ctx.getText());
 	}
